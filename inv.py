@@ -36,11 +36,48 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class MainHandler(BaseHandler):
 	def get(self):
-		self.write("Nothing to see here!")
+		self.write("""
+		<div type="main_button">View tools list</div>
+		""")
+
 
 class QRHandler(BaseHandler):
 	def get(self, path):
-		self.write("QRHandle "+ path)
+		db = self.application.database
+		results = db.tools.find({'url_id':path})
+		if results.count()==0:
+			self.write("""
+			<div>
+				<span>Description (Japanese)</span>
+				<span><input type="text" name="description-jp"></input></span>
+			</div>
+			<div>
+				<span>Take a picture of the tool:</span>
+				<span><input type="file" accept="image/*;capture=camera" name="pic"></span>
+			</div>
+			<div>
+				<span>Current location of the tool</span>
+				<span>
+					<select name="location">
+						<option>Hackefarm</option>
+						<option>Maison Bleue</option>
+						<option>SDF café</option>
+						<option>Other</option>
+					</select>
+				</span>
+				<span>Locate through GPS</span>
+			</div>
+				
+			<div type="main_button">Create new tool</div>
+			""")
+		else:
+			self.write("""
+			<div type="description">Handsaw</div>
+			<img src="/p/{0}>
+			<div type="main_button">I am borrowing this object</div>
+			<div type="main_button">I am returning this object</div>
+			<div type="main_button">I found this object</div>
+			""").format(path)
 
 class UploadPicHandler(BaseHandler):
 	def get(self):
