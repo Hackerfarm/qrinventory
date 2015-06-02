@@ -38,8 +38,18 @@ class MainHandler(BaseHandler):
 	def get(self):
 		self.write("""
 		<div type="title">Welcome, {0}</div>
-		<div type="main_button">View tools list</div>
+		<div type="main_button" onmousedown="document.location = '/list'">View tools list</div>
 		""".format(self.get_current_user()))
+
+class ListHandler(BaseHandler):
+	def get(self):
+		self.write("""
+		<div type="title">Welcome, {0}</div>
+		<div type="list">Liste</div>
+		""".format(self.get_current_user()))
+		db = self.application.database
+		for tool in db.tools.find():
+			self.write("<div>{0}_:_{1}</div>".format(str(tool["_id"]), tool["description-en"]))
 
 
 class QRHandler(BaseHandler):
@@ -84,18 +94,33 @@ class QRHandler(BaseHandler):
 			
 			""".format(self.xsrf_form_html(), path))
 		else:
+			db = self.application.database
+			tool = db.tools.find_one({'url_id':path})
 			self.write("""
-			<div type="description">Handsaw</div>
-			<img src="/p/{0}>
+			<div id="description-en">{description_en}</div>
+			<div id="description-jp">{description_jp}</div>
+			<div id="owner">Owner: {owner}</div>
+			<div id=image"><img src="/p/{img_url}"></div>
 			<div type="main_button">I am borrowing this object</div>
 			<div type="main_button">I am returning this object</div>
 			<div type="main_button">I found this object</div>
-			""").format(path)
+			""".format(description_en=tool.get("description-en",""),
+			           description_jp=tool.get("description-jp",""),
+			           owner=tool["owner"],
+			           img_url=tool["picture-id"]))
 
 class NewObjHandler(BaseHandler):
 	def post(self):
-		self.write(self.request.arguments.get("owner")[0])
-		self.write(self.request.arguments.get("url_id")[0])
+		newtool = {
+		'owner': self.request.arguments.get("owner",[""])[0],
+		'url_id': self.request.arguments.get("url_id")[0],
+		'description-jp': self.request.arguments.get("description-jp", [""])[0],
+		'description-en': self.request.arguments.get("description-en", [""])[0],
+		'picture-id': self.request.arguments.get("picture-id", [None])[0],
+		'location': self.request.arguments.get("location", [""])[0]}
+		
+		db = self.application.database
+		db.tools.insert(newtool)
 
 class UploadPicHandler(BaseHandler):
 	def get(self):
@@ -161,6 +186,7 @@ class Application(tornado.web.Application):
             (r"/uploadpicture", UploadPicHandler),
             (r"/p/(.*)", PictureHandler),
             (r"/auth/(.*)", AuthHandler),
+            (r"/list", ListHandler),
             (r"/newobject", NewObjHandler)
         ]
 
