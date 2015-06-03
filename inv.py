@@ -49,7 +49,7 @@ class ListHandler(BaseHandler):
 		""".format(self.get_current_user()))
 		db = self.application.database
 		for tool in db.tools.find():
-			self.write("<div>{0}_:_{1}</div>".format(str(tool["_id"]), tool["description-en"]))
+			self.write("<div>{0}_:_{1}</div>".format(str(tool["_id"]), tool["description_en"]))
 
 
 class QRHandler(BaseHandler):
@@ -58,16 +58,16 @@ class QRHandler(BaseHandler):
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
 			self.write("""
-			<form method="POST" action="/newobject" id="newobjform">
+			<form enctype="multipart/form-data" method="POST" action="/newobject" id="newobjform">
 			{0}
 			<input type="hidden" value="{1}" name="url_id"/>
 			<div>
 				<span>Description (Japanese)</span>
-				<span><input type="text" name="description-jp"></input></span>
+				<span><input type="text" name="description_jp"></input></span>
 			</div>
 			<div>
 				<span>Description (English)</span>
-				<span><input type="text" name="description-en"></input></span>
+				<span><input type="text" name="description_en"></input></span>
 			</div>
 			<div>
 				<span>Owner</span>
@@ -97,30 +97,36 @@ class QRHandler(BaseHandler):
 			db = self.application.database
 			tool = db.tools.find_one({'url_id':path})
 			self.write("""
-			<div id="description-en">{description_en}</div>
-			<div id="description-jp">{description_jp}</div>
+			<div id="description_en">{description_en}</div>
+			<div id="description_jp">{description_jp}</div>
 			<div id="owner">Owner: {owner}</div>
 			<div id=image"><img src="/p/{img_url}"></div>
 			<div type="main_button">I am borrowing this object</div>
 			<div type="main_button">I am returning this object</div>
 			<div type="main_button">I found this object</div>
-			""".format(description_en=tool.get("description-en",""),
-			           description_jp=tool.get("description-jp",""),
+			""".format(description_en=tool.get("description_en",""),
+			           description_jp=tool.get("description_jp",""),
 			           owner=tool["owner"],
-			           img_url=tool["picture-id"]))
+			           img_url=str(tool["picture_id"])))
 
 class NewObjHandler(BaseHandler):
 	def post(self):
+		self.write("What do I get?<br>"+str(self.request.files['pic'][0]['filename']))
+		img = Image.open(StringIO.StringIO(self.request.files['pic'][0]['body']))
+		fs = self.application.gridfs
+		db = self.application.database
+		imgid = fs.put(StringIO.StringIO(self.request.files['pic'][0]['body']))
+
 		newtool = {
 		'owner': self.request.arguments.get("owner",[""])[0],
 		'url_id': self.request.arguments.get("url_id")[0],
-		'description-jp': self.request.arguments.get("description-jp", [""])[0],
-		'description-en': self.request.arguments.get("description-en", [""])[0],
-		'picture-id': self.request.arguments.get("picture-id", [None])[0],
+		'description_jp': self.request.arguments.get("description_jp", [""])[0],
+		'description_en': self.request.arguments.get("description_en", [""])[0],
+		'picture_id': imgid,
 		'location': self.request.arguments.get("location", [""])[0]}
-		
-		db = self.application.database
 		db.tools.insert(newtool)
+
+		self.write("<img src='/p/{0}'>".format(str(imgid)))
 
 class UploadPicHandler(BaseHandler):
 	def get(self):
