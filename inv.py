@@ -44,12 +44,20 @@ class MainHandler(BaseHandler):
 class ListHandler(BaseHandler):
 	def get(self):
 		self.write("""
-		<div type="title">Welcome, {0}</div>
-		<div type="list">Liste</div>
+		<div class="title">Welcome, {0}</div>
+		<div class="list">Liste</div>
 		""".format(self.get_current_user()))
 		db = self.application.database
 		for tool in db.tools.find():
-			self.write("<div>{0}_:_{1}</div>".format(str(tool["_id"]), tool["description_en"]))
+			self.write("""<div id='tool_list_element'>
+						<a href='/o/{link}'>
+						<div><img width="150px" height="150px" src='/p/{img}'></div>
+						<div id='tool_list_name'>{name}</div></a>
+					</div>""".format(
+						link=str(tool["url_id"]),
+						img=str(tool["picture_id"]),
+						name=tool["description_en"])
+						)
 
 
 class QRHandler(BaseHandler):
@@ -57,7 +65,7 @@ class QRHandler(BaseHandler):
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
-			self.write("""
+			self.write(u"""
 			<form enctype="multipart/form-data" method="POST" action="/newobject" id="newobjform">
 			{0}
 			<input type="hidden" value="{1}" name="url_id"/>
@@ -96,18 +104,68 @@ class QRHandler(BaseHandler):
 		else:
 			db = self.application.database
 			tool = db.tools.find_one({'url_id':path})
-			self.write("""
+			self.write(u"""
 			<div id="description_en">{description_en}</div>
 			<div id="description_jp">{description_jp}</div>
+			<div id="location">Location: {location}</div>
 			<div id="owner">Owner: {owner}</div>
-			<div id=image"><img src="/p/{img_url}"></div>
-			<div type="main_button">I am borrowing this object</div>
-			<div type="main_button">I am returning this object</div>
-			<div type="main_button">I found this object</div>
+			<div id=image"><a href="/p/{img_url}">
+				<img width = "300px" height="300px" src="/p/{img_url}"></a>
+			</div>
+			<div type="main_button">
+				<a href="/os?action=borrowing&object_id={object_id}">I am borrowing this object</a>
+			</div>
+			<div type="main_button">
+				<a href="/os?action=returning&object_id={object_id}">I am returning this object</a>
+			</div>
+			<div type="main_button">
+				<a href="/os?action=found&object_id={object_id}">I found this object</a>
+			</div>
 			""".format(description_en=tool.get("description_en",""),
 			           description_jp=tool.get("description_jp",""),
+			           location=tool.get("location",""),
 			           owner=tool["owner"],
-			           img_url=str(tool["picture_id"])))
+			           img_url=str(tool["picture_id"]),
+			           object_id=path))
+
+class ObjectStatusHandler(BaseHandler):
+	def get(self):
+		act = self.request.arguments.get("action",[""])[0]
+		if act=="found":
+			msg ="I found this object at :"
+		elif act=="borrowing":
+			msg ="I am borrowing this object. It will be at :"
+		else:
+			msg ="I returned this object. It is now at:"
+		self.write(u"""
+		<div class="status_msg">{msg}</div>
+		<form action="/os" method="POST">
+			<input type="hidden" name="object_id" value="{object_id}"/>
+			<input type="hidden" name="action" value="{action}"/>
+			<select name="location">
+				<option>Hackefarm</option>
+				<option>Maison Bleue</option>
+				<option>SDF café</option>
+				<option>Other</option>
+			</select>
+			<input type="submit" value="Validate"/>
+			{secure}
+		</form>""".format(object_id = self.request.arguments.get("object_id",[""])[0],
+		                  action = self.request.arguments.get("action",[""])[0],
+		                  msg = msg,
+		                  secure=self.xsrf_form_html()))
+	def post(self):
+		self.write(self.request.arguments.get("location", [""])[0])
+		db = self.application.database
+		db.actions.insert({
+			"action":self.request.arguments.get("action",[""])[0],
+			"user":self.get_current_user(),
+			"location":self.request.arguments.get("location",[""])[0],
+			"timestamp":datetime.now(),
+			"object_id":self.request.arguments.get("object_id",[""])[0]})
+		db.tools.update({"url_id":self.request.arguments.get("object_id",[""])[0]},
+		                 {"$set": {"location": self.request.arguments.get("location",[""])[0]}})
+
 
 class NewObjHandler(BaseHandler):
 	def post(self):
@@ -191,6 +249,7 @@ class Application(tornado.web.Application):
             (r"/o/(.*)", QRHandler),
             (r"/uploadpicture", UploadPicHandler),
             (r"/p/(.*)", PictureHandler),
+            (r"/os", ObjectStatusHandler),
             (r"/auth/(.*)", AuthHandler),
             (r"/list", ListHandler),
             (r"/newobject", NewObjHandler)
