@@ -74,22 +74,22 @@ class QRHandler(BaseHandler):
 			self.write(u"""
 			<form encclass="multipart/form-data" method="POST" action="/newobject" id="newobjform">
 			{0}
-			<input class="hidden" value="{1}" name="url_id"/>
+			<input type="hidden" value="{1}" name="url_id"/>
 			<div>
 				<span>Description (Japanese)</span>
 				<span><input class="text" name="description_jp"></input></span>
 			</div>
 			<div>
 				<span>Description (English)</span>
-				<span><input class="text" name="description_en"></input></span>
+				<span><input type="text" name="description_en"></input></span>
 			</div>
 			<div>
 				<span>Owner</span>
-				<span><input class="text" name="owner"></input></span>
+				<span><input type="text" name="owner"></input></span>
 			</div>
 			<div>
 				<span>Take a picture of the tool:</span>
-				<span><input class="file" accept="image/*;capture=camera" name="pic"></span>
+				<span><input type="file" accept="image/*;capture=camera" name="pic"></span>
 			</div>
 			<div>
 				<span>Current location of the tool</span>
@@ -101,7 +101,7 @@ class QRHandler(BaseHandler):
 						<option>Other</option>
 					</select>
 				</span>
-				<span>Locate through GPS</span>
+				<span class="main_button">Locate through GPS</span>
 			</div>
 			</form>
 			<div onmousedown="document.getElementById('newobjform').submit()" class="main_button">Create new tool</div>
@@ -147,15 +147,15 @@ class ObjectStatusHandler(BaseHandler):
 		self.write(u"""
 		<div class="status_msg">{msg}</div>
 		<form action="/os" method="POST">
-			<input class="hidden" name="object_id" value="{object_id}"/>
-			<input class="hidden" name="action" value="{action}"/>
+			<input type="hidden" name="object_id" value="{object_id}"/>
+			<input type="hidden" name="action" value="{action}"/>
 			<select name="location">
 				<option>Hackefarm</option>
 				<option>Maison Bleue</option>
 				<option>SDF café</option>
 				<option>Other</option>
 			</select>
-			<input class="submit" value="Validate"/>
+			<input type="submit" value="Validate"/>
 			{secure}
 		</form>""".format(object_id = self.request.arguments.get("object_id",[""])[0],
 		                  action = self.request.arguments.get("action",[""])[0],
@@ -200,9 +200,9 @@ class UploadPicHandler(BaseHandler):
 		header(self)
 		self.write("""
 		<form encclass="multipart/form-data" method="POST" action="/uploadpicture">
-			<input class="file" accept="image/*;capture=camera" name="pic">
-			<input class="hidden" name="pouic" value="1">
-			<input class="submit">
+			<input type="file" accept="image/*;capture=camera" name="pic">
+			<input type="hidden" name="pouic" value="1">
+			<input type="submit">
 		</form> """)
 		
 	def post(self):
