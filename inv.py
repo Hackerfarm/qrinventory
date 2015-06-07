@@ -3,6 +3,7 @@
 
 from datetime import datetime
 from pymongo.connection import Connection
+from qrtools import QR
 import gridfs
 
 from bson.objectid import ObjectId
@@ -218,6 +219,23 @@ class PictureHandler(BaseHandler):
 		#self.write(fs.get(imgid["imgid"]).read())
 		self.write(fs.get(ObjectId(path)).read())
 
+class GenerateQRHandler(BaseHandler):
+	def get(self):
+		self.get("")
+		
+	def get(self, path):
+		try:
+			if(str(int(path))!=path):
+				self.write("Incorect ID")
+				return
+		except:
+			self.write("Incorect ID")
+			return		
+		q=QR(u""+path)
+		q.encode()
+		self.set_header("Content-Type", "image/gif")
+		self.write(open(q.filename).read())
+
 class AuthHandler(BaseHandler):
 	def get(self):
 		self.get("")
@@ -252,6 +270,7 @@ class Application(tornado.web.Application):
             (r"/os", ObjectStatusHandler),
             (r"/auth/(.*)", AuthHandler),
             (r"/list", ListHandler),
+            (r"/g/(.*)", GenerateQRHandler),
             (r"/newobject", NewObjHandler)
         ]
 
