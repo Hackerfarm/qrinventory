@@ -2,3 +2,7 @@ V Decent style
 - Admin page
 - Edit object page
 V Generate new QR label page
+- Secure better with the cookie (right now anyone can access the list for instance)
+- navigation bar (go back to list, admin, disconnect, EN/JP)
+- New location: Manual + GPS edition
+- Create thumbnail images for faster display 
