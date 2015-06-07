@@ -72,7 +72,7 @@ class QRHandler(BaseHandler):
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
 			self.write(u"""
-			<form encclass="multipart/form-data" method="POST" action="/newobject" id="newobjform">
+			<form enctype="multipart/form-data" method="POST" action="/newobject" id="newobjform">
 			{0}
 			<input type="hidden" value="{1}" name="url_id"/>
 			<div>
@@ -199,7 +199,7 @@ class UploadPicHandler(BaseHandler):
 	def get(self):
 		header(self)
 		self.write("""
-		<form encclass="multipart/form-data" method="POST" action="/uploadpicture">
+		<form enctype="multipart/form-data" method="POST" action="/uploadpicture">
 			<input type="file" accept="image/*;capture=camera" name="pic">
 			<input type="hidden" name="pouic" value="1">
 			<input type="submit">
