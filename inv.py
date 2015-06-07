@@ -26,6 +26,8 @@ from tornado.options import define, options
 
 import config
 
+def header(handler):
+		handler.write("""<link href="/static/style.css" rel="stylesheet" class="text/css">""")
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -37,23 +39,25 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class MainHandler(BaseHandler):
 	def get(self):
+		header(self)
 		self.write("""
-		<div type="title">Welcome, {0}</div>
-		<div type="main_button" onmousedown="document.location = '/list'">View tools list</div>
+		<div class="title">Welcome, {0}</div>
+		<div class="main_button" onmousedown="document.location = '/list'">View tools list</div>
 		""".format(self.get_current_user()))
 
 class ListHandler(BaseHandler):
 	def get(self):
+		header(self)
 		self.write("""
 		<div class="title">Welcome, {0}</div>
-		<div class="list">Liste</div>
+		<div class="list">List</div>
 		""".format(self.get_current_user()))
 		db = self.application.database
 		for tool in db.tools.find():
-			self.write("""<div id='tool_list_element'>
+			self.write("""<div class='tool_list_element'>
 						<a href='/o/{link}'>
 						<div><img width="150px" height="150px" src='/p/{img}'></div>
-						<div id='tool_list_name'>{name}</div></a>
+						<div class='tool_list_name'>{name}</div></a>
 					</div>""".format(
 						link=str(tool["url_id"]),
 						img=str(tool["picture_id"]),
@@ -63,28 +67,29 @@ class ListHandler(BaseHandler):
 
 class QRHandler(BaseHandler):
 	def get(self, path):
+		header(self)
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
 			self.write(u"""
-			<form enctype="multipart/form-data" method="POST" action="/newobject" id="newobjform">
+			<form encclass="multipart/form-data" method="POST" action="/newobject" id="newobjform">
 			{0}
-			<input type="hidden" value="{1}" name="url_id"/>
+			<input class="hidden" value="{1}" name="url_id"/>
 			<div>
 				<span>Description (Japanese)</span>
-				<span><input type="text" name="description_jp"></input></span>
+				<span><input class="text" name="description_jp"></input></span>
 			</div>
 			<div>
 				<span>Description (English)</span>
-				<span><input type="text" name="description_en"></input></span>
+				<span><input class="text" name="description_en"></input></span>
 			</div>
 			<div>
 				<span>Owner</span>
-				<span><input type="text" name="owner"></input></span>
+				<span><input class="text" name="owner"></input></span>
 			</div>
 			<div>
 				<span>Take a picture of the tool:</span>
-				<span><input type="file" accept="image/*;capture=camera" name="pic"></span>
+				<span><input class="file" accept="image/*;capture=camera" name="pic"></span>
 			</div>
 			<div>
 				<span>Current location of the tool</span>
@@ -99,7 +104,7 @@ class QRHandler(BaseHandler):
 				<span>Locate through GPS</span>
 			</div>
 			</form>
-			<div onmousedown="document.getElementById('newobjform').submit()" type="main_button">Create new tool</div>
+			<div onmousedown="document.getElementById('newobjform').submit()" class="main_button">Create new tool</div>
 			
 			""".format(self.xsrf_form_html(), path))
 		else:
@@ -113,13 +118,13 @@ class QRHandler(BaseHandler):
 			<div id=image"><a href="/p/{img_url}">
 				<img width = "300px" height="300px" src="/p/{img_url}"></a>
 			</div>
-			<div type="main_button">
+			<div class="main_button">
 				<a href="/os?action=borrowing&object_id={object_id}">I am borrowing this object</a>
 			</div>
-			<div type="main_button">
+			<div class="main_button">
 				<a href="/os?action=returning&object_id={object_id}">I am returning this object</a>
 			</div>
-			<div type="main_button">
+			<div class="main_button">
 				<a href="/os?action=found&object_id={object_id}">I found this object</a>
 			</div>
 			""".format(description_en=tool.get("description_en",""),
@@ -131,6 +136,7 @@ class QRHandler(BaseHandler):
 
 class ObjectStatusHandler(BaseHandler):
 	def get(self):
+		header(self)
 		act = self.request.arguments.get("action",[""])[0]
 		if act=="found":
 			msg ="I found this object at :"
@@ -141,21 +147,22 @@ class ObjectStatusHandler(BaseHandler):
 		self.write(u"""
 		<div class="status_msg">{msg}</div>
 		<form action="/os" method="POST">
-			<input type="hidden" name="object_id" value="{object_id}"/>
-			<input type="hidden" name="action" value="{action}"/>
+			<input class="hidden" name="object_id" value="{object_id}"/>
+			<input class="hidden" name="action" value="{action}"/>
 			<select name="location">
 				<option>Hackefarm</option>
 				<option>Maison Bleue</option>
 				<option>SDF café</option>
 				<option>Other</option>
 			</select>
-			<input type="submit" value="Validate"/>
+			<input class="submit" value="Validate"/>
 			{secure}
 		</form>""".format(object_id = self.request.arguments.get("object_id",[""])[0],
 		                  action = self.request.arguments.get("action",[""])[0],
 		                  msg = msg,
 		                  secure=self.xsrf_form_html()))
 	def post(self):
+		header(self)
 		self.write(self.request.arguments.get("location", [""])[0])
 		db = self.application.database
 		db.actions.insert({
@@ -170,6 +177,7 @@ class ObjectStatusHandler(BaseHandler):
 
 class NewObjHandler(BaseHandler):
 	def post(self):
+		header(self)
 		self.write("What do I get?<br>"+str(self.request.files['pic'][0]['filename']))
 		img = Image.open(StringIO.StringIO(self.request.files['pic'][0]['body']))
 		fs = self.application.gridfs
@@ -189,14 +197,16 @@ class NewObjHandler(BaseHandler):
 
 class UploadPicHandler(BaseHandler):
 	def get(self):
+		header(self)
 		self.write("""
-		<form enctype="multipart/form-data" method="POST" action="/uploadpicture">
-			<input type="file" accept="image/*;capture=camera" name="pic">
-			<input type="hidden" name="pouic" value="1">
-			<input type="submit">
+		<form encclass="multipart/form-data" method="POST" action="/uploadpicture">
+			<input class="file" accept="image/*;capture=camera" name="pic">
+			<input class="hidden" name="pouic" value="1">
+			<input class="submit">
 		</form> """)
 		
 	def post(self):
+		header(self)
 		self.write("What do I get?<br>"+str(self.request.files['pic'][0]['filename']))
 		img = Image.open(StringIO.StringIO(self.request.files['pic'][0]['body']))
 		img.save("./a", img.format)
@@ -246,6 +256,7 @@ class AuthHandler(BaseHandler):
 		if userobj==None:
 			raise tornado.web.HTTPError(500, "Unknown user/bad URL.")
 		else:
+			header(self)
 			self.write("Welcome " + userobj['username'])
 			self.set_secure_cookie("hfinv_user", tornado.escape.json_encode(userobj['username']))
 			self.redirect("/")

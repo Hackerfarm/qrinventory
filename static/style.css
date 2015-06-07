@@ -1,0 +1,31 @@
+body {
+	background-color: lightblue;
+	font-weight: bold;
+}
+
+.title {
+	padding-top: 20px;
+	padding-bottom: 20px;
+}
+
+.main_button {
+	margin-left: auto;
+	margin-right: auto;
+	display:inline-block;
+	border: 1px solid black;
+	padding: 10px;
+	background-color: #7799cc;
+	color: white;
+	font-weight: bold;
+}
+
+.tool_list_element{
+	text-align: center;
+	border: 1px solid #7799cc;
+	display:inline-block;
+	padding: 3px;
+}
+
+a{
+	text-decoration: none;
+}
