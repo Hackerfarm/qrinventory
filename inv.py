@@ -183,7 +183,6 @@ class NewObjHandler(BaseHandler):
 		fs = self.application.gridfs
 		db = self.application.database
 		imgid = fs.put(StringIO.StringIO(self.request.files['pic'][0]['body']))
-
 		newtool = {
 		'owner': self.request.arguments.get("owner",[""])[0],
 		'url_id': self.request.arguments.get("url_id")[0],
