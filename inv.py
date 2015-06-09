@@ -256,6 +256,10 @@ class GenerateQRHandler(BaseHandler):
 		self.set_header("Content-Type", "image/gif")
 		self.write(open(q.filename).read())
 
+class LoginHandler(BaseHandler):
+	def get(self):
+		self.write("You must be logged in to access this page.")
+		
 class AuthHandler(BaseHandler):
 	def get(self):
 		self.get("")
@@ -281,6 +285,7 @@ class Application(tornado.web.Application):
             xsrf_cookies=True,
             home_url=options.home_url,
             debug=True,
+            "login_url": "/login",
         )
 
         handlers = [
@@ -292,6 +297,7 @@ class Application(tornado.web.Application):
             (r"/auth/(.*)", AuthHandler),
             (r"/list", ListHandler),
             (r"/g/(.*)", GenerateQRHandler),
+            (r"/login", LoginHandler),
             (r"/newobject", NewObjHandler)
         ]
 
