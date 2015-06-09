@@ -46,6 +46,7 @@ class MainHandler(BaseHandler):
 		""".format(self.get_current_user()))
 
 class ListHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self):
 		header(self)
 		self.write("""
@@ -66,6 +67,7 @@ class ListHandler(BaseHandler):
 
 
 class QRHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self, path):
 		header(self)
 		db = self.application.database
@@ -135,6 +137,7 @@ class QRHandler(BaseHandler):
 			           object_id=path))
 
 class ObjectStatusHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self):
 		header(self)
 		act = self.request.arguments.get("action",[""])[0]
@@ -161,6 +164,7 @@ class ObjectStatusHandler(BaseHandler):
 		                  action = self.request.arguments.get("action",[""])[0],
 		                  msg = msg,
 		                  secure=self.xsrf_form_html()))
+	@tornado.web.authenticated
 	def post(self):
 		header(self)
 		self.write(self.request.arguments.get("location", [""])[0])
@@ -176,6 +180,7 @@ class ObjectStatusHandler(BaseHandler):
 
 
 class NewObjHandler(BaseHandler):
+	@tornado.web.authenticated
 	def post(self):
 		header(self)
 		self.write("What do I get?<br>"+str(self.request.files['pic'][0]['filename']))
@@ -195,6 +200,7 @@ class NewObjHandler(BaseHandler):
 		self.write("<img src='/p/{0}'>".format(str(imgid)))
 
 class UploadPicHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self):
 		header(self)
 		self.write("""
@@ -204,6 +210,7 @@ class UploadPicHandler(BaseHandler):
 			<input type="submit">
 		</form> """)
 		
+	@tornado.web.authenticated
 	def post(self):
 		header(self)
 		self.write("What do I get?<br>"+str(self.request.files['pic'][0]['filename']))
@@ -217,9 +224,11 @@ class UploadPicHandler(BaseHandler):
 
 
 class PictureHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self):
 		self.get("")
 		
+	@tornado.web.authenticated
 	def get(self, path):
 		self.set_header("Content-Type", "image/gif")
 		fs = self.application.gridfs
@@ -229,9 +238,11 @@ class PictureHandler(BaseHandler):
 		self.write(fs.get(ObjectId(path)).read())
 
 class GenerateQRHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self):
 		self.get("")
 		
+	@tornado.web.authenticated
 	def get(self, path):
 		try:
 			if(str(int(path))!=path):

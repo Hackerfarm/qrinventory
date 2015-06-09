@@ -9,3 +9,5 @@ V Generate new QR label page
 - New location: Manual + GPS edition
 - Create thumbnail images for faster display 
 - Bigger buttons for phones
+V Hosting on port 80
+- Replace all div onclick with href
