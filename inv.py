@@ -285,7 +285,7 @@ class Application(tornado.web.Application):
             xsrf_cookies=True,
             home_url=options.home_url,
             debug=True,
-            "login_url": "/login",
+            login_url="/login",
         )
 
         handlers = [
