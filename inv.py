@@ -109,11 +109,11 @@ class EditObjectHandler(BaseHandler):
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
 			self.write(template_object_edit.format(
-						secure_cookie=self.xsrf_form_html(), 
-						object_id=path,
-						description_jp="",
-						description_en="",
-						owner=""))
+			            secure_cookie=self.xsrf_form_html(), 
+			            object_id=path,
+			            description_jp="",
+			            description_en="",
+			            owner=""))
 		else:
 			db = self.application.database
 			tool = db.tools.find_one({'url_id':path})
@@ -125,6 +125,8 @@ class EditObjectHandler(BaseHandler):
 			           img_url=str(tool["picture_id"]),
 			           object_id=path,
 			           secure_cookie=self.xsrf_form_html()))
+	def put(self,path):
+		return
 
 class QRHandler(BaseHandler):
 	@tornado.web.authenticated
