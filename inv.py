@@ -26,6 +26,41 @@ from tornado.options import define, options
 
 import config
 
+template_object_edit = u"""
+<form enctype="multipart/form-data" method="POST" action="/newobject" id="newobjform">
+{secure_cookie}
+<input type="hidden" value="{object_id}" name="url_id"/>
+<div>
+	<span>Description (Japanese)</span>
+	<span><input class="text" name="description_jp" value={description_jp}></input></span>
+</div>
+<div>
+	<span>Description (English)</span>
+	<span><input type="text" name="description_en" value={description_en}></input></span>
+</div>
+<div>
+	<span>Owner</span>
+	<span><input type="text" name="owner" value={owner}></input></span>
+</div>
+<div>
+	<span>Take a picture of the tool:</span>
+	<span><input type="file" accept="image/*;capture=camera" name="pic"></span>
+</div>
+<div>
+	<span>Current location of the tool</span>
+	<span>
+		<select name="location">
+			<option>Hackefarm</option>
+			<option selected>Maison Bleue</option>
+			<option>SDF café</option>
+			<option>Other</option>
+		</select>
+	</span>
+	<!-- <span class="main_button">Locate through GPS</span> -->
+</div>
+</form>
+<div onmousedown="document.getElementById('newobjform').submit()" class="main_button">Create new tool</div>"""
+
 def header(handler):
 		handler.write("""<link href="/static/style.css" rel="stylesheet" class="text/css">""")
 
@@ -66,6 +101,31 @@ class ListHandler(BaseHandler):
 						)
 
 
+class EditObjectHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self, path):
+		header(self)
+		db = self.application.database
+		results = db.tools.find({'url_id':path})
+		if results.count()==0:
+			self.write(template_object_edit.format(
+						secure_cookie=self.xsrf_form_html(), 
+						object_id=path,
+						description_jp="",
+						description_en="",
+						owner=""))
+		else:
+			db = self.application.database
+			tool = db.tools.find_one({'url_id':path})
+			self.write(template_object_edit.format(
+			           description_en=tool.get("description_en",""),
+			           description_jp=tool.get("description_jp",""),
+			           location=tool.get("location",""),
+			           owner=tool["owner"],
+			           img_url=str(tool["picture_id"]),
+			           object_id=path,
+			           secure_cookie=self.xsrf_form_html()))
+
 class QRHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self, path):
@@ -73,42 +133,12 @@ class QRHandler(BaseHandler):
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
-			self.write(u"""
-			<form enctype="multipart/form-data" method="POST" action="/newobject" id="newobjform">
-			{0}
-			<input type="hidden" value="{1}" name="url_id"/>
-			<div>
-				<span>Description (Japanese)</span>
-				<span><input class="text" name="description_jp"></input></span>
-			</div>
-			<div>
-				<span>Description (English)</span>
-				<span><input type="text" name="description_en"></input></span>
-			</div>
-			<div>
-				<span>Owner</span>
-				<span><input type="text" name="owner"></input></span>
-			</div>
-			<div>
-				<span>Take a picture of the tool:</span>
-				<span><input type="file" accept="image/*;capture=camera" name="pic"></span>
-			</div>
-			<div>
-				<span>Current location of the tool</span>
-				<span>
-					<select name="location">
-						<option>Hackefarm</option>
-						<option>Maison Bleue</option>
-						<option>SDF café</option>
-						<option>Other</option>
-					</select>
-				</span>
-				<span class="main_button">Locate through GPS</span>
-			</div>
-			</form>
-			<div onmousedown="document.getElementById('newobjform').submit()" class="main_button">Create new tool</div>
-			
-			""".format(self.xsrf_form_html(), path))
+			self.write(template_object_edit.format(
+						secure_cookie=self.xsrf_form_html(), 
+						object_id=path,
+						description_jp="",
+						description_en="",
+						owner=""))
 		else:
 			db = self.application.database
 			tool = db.tools.find_one({'url_id':path})
@@ -122,12 +152,15 @@ class QRHandler(BaseHandler):
 			</div>
 			<div class="main_button">
 				<a href="/os?action=borrowing&object_id={object_id}">I am borrowing this object</a>
-			</div>
+			</div><br/>
 			<div class="main_button">
 				<a href="/os?action=returning&object_id={object_id}">I am returning this object</a>
-			</div>
+			</div><br/>
 			<div class="main_button">
 				<a href="/os?action=found&object_id={object_id}">I found this object</a>
+			</div><br/>
+			<div class="main_button">
+				<a href="/edit/{object_id}">Edit this object</a>
 			</div>
 			""".format(description_en=tool.get("description_en",""),
 			           description_jp=tool.get("description_jp",""),
@@ -297,6 +330,7 @@ class Application(tornado.web.Application):
             (r"/auth/(.*)", AuthHandler),
             (r"/list", ListHandler),
             (r"/g/(.*)", GenerateQRHandler),
+            (r"/edit/(.*)", EditObjectHandler),
             (r"/login", LoginHandler),
             (r"/newobject", NewObjHandler)
         ]

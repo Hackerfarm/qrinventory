@@ -1,13 +1,11 @@
-V Decent style
-- Admin page
 - Edit object page
-V Generate new QR label page
-- Page to display 44 new labels
-- Keep track of biggest url_id ever printed
-- Secure better with the cookie (right now anyone can access the list for instance)
-- navigation bar (go back to list, admin, disconnect, EN/JP)
 - New location: Manual + GPS edition
 - Create thumbnail images for faster display 
+- Keep track of biggest url_id ever printed
+- Page to display 44 new labels
 - Bigger buttons for phones
-V Hosting on port 80
+- navigation bar (go back to list, admin, disconnect, EN/JP)
+- Admin page
+- Japanese version
 - Replace all div onclick with href
+- Inspect new tools data (force an owner and location)
