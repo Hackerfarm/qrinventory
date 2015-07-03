@@ -90,13 +90,17 @@ class ListHandler(BaseHandler):
 		""".format(self.get_current_user()))
 		db = self.application.database
 		for tool in db.tools.find():
+			if tool.has_key("thumbnail_id"):
+				imgid = tool["thumbnail_id"]
+			else:
+				imgid = tool["picture_id"]
 			self.write("""<div class='tool_list_element'>
 						<a href='/o/{link}'>
 						<div><img width="150px" height="150px" src='/p/{img}'></div>
 						<div class='tool_list_name'>{name}</div></a>
 					</div>""".format(
 						link=str(tool["url_id"]),
-						img=str(tool["picture_id"]),
+						img=str(imgid),
 						name=tool["description_en"])
 						)
 
@@ -219,16 +223,21 @@ class NewObjHandler(BaseHandler):
 	def post(self):
 		header(self)
 		self.write("What do I get?<br>"+str(self.request.files['pic'][0]['filename']))
-		img = Image.open(StringIO.StringIO(self.request.files['pic'][0]['body']))
 		fs = self.application.gridfs
 		db = self.application.database
 		imgid = fs.put(StringIO.StringIO(self.request.files['pic'][0]['body']))
+		thb = Image.open(StringIO.StringIO(self.request.files['pic'][0]['body']))
+		thb.thumbnail((128,128), Image.ANTIALIAS)
+		output = StringIO.StringIO()
+		thb.save(output, format="JPEG")
+		thbid = fs.put(output.getvalue())
 		newtool = {
 		'owner': self.request.arguments.get("owner",[""])[0],
 		'url_id': self.request.arguments.get("url_id")[0],
 		'description_jp': self.request.arguments.get("description_jp", [""])[0],
 		'description_en': self.request.arguments.get("description_en", [""])[0],
 		'picture_id': imgid,
+		'thumbnail_id': thbid,
 		'location': self.request.arguments.get("location", [""])[0]}
 		db.tools.insert(newtool)
 
@@ -265,7 +274,7 @@ class PictureHandler(BaseHandler):
 		
 	@tornado.web.authenticated
 	def get(self, path):
-		self.set_header("Content-Type", "image/gif")
+		self.set_header("Content-Type", "image/jpeg")
 		fs = self.application.gridfs
 		db = self.application.database
 		#imgid = db.dev.find_one({"imgid":{'$exists':True}})
