@@ -1,9 +1,9 @@
-- New location: Manual + GPS edition
-- Keep track of biggest url_id ever printed
-- Page to display 44 new labels
-- Bigger buttons for phones
 - navigation bar (go back to list, admin, disconnect, EN/JP)
 - Admin page
+- Bigger buttons for phones
+- New location: GPS edition
 - Japanese version
 - Replace all div onclick with href
 - Inspect new tools data (force an owner and location)
+- Sanitize all inputs (forbid HTML tags)
+- Error message when pic is missing

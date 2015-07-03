@@ -19,6 +19,7 @@ import tornado.web
 import time
 import StringIO
 import Image
+import random
 
 from markdown import markdown
 
@@ -49,15 +50,21 @@ template_object_edit = u"""
 <div>
 	<span>Current location of the tool</span>
 	<span>
-		<select name="location">
-			<option>Hackefarm</option>
-			<option selected>Maison Bleue</option>
-			<option>SDF café</option>
+		<select name="location" onclick="
+					if(value=='Other'){{
+						document.getElementById('newlocation').style.visibility='visible';
+					}}
+					else {{
+						document.getElementById('newlocation').style.visibility='hidden';
+					}}">
+			{locationlist}
 			<option>Other</option>
 		</select>
 	</span>
-	<!-- <span class="main_button">Locate through GPS</span> -->
 </div>
+<div id="newlocation" style="visibility:hidden">Please enter the name of the new location: <input name="newlocationname"></div>
+	<!-- <span class="main_button">Locate through GPS</span> -->
+
 </form>
 <div onmousedown="document.getElementById('newobjform').submit()" class="main_button">Create new tool</div>"""
 
@@ -112,15 +119,24 @@ class EditObjectHandler(BaseHandler):
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
+			locations = db.locations.find()
+			s_locations = ""
+			for l in locations:
+				s_locations+="<option>{0}</option>\n".format(l["name"])
 			self.write(template_object_edit.format(
 			            secure_cookie=self.xsrf_form_html(), 
 			            object_id=path,
 			            description_jp="",
 			            description_en="",
+						locationlist=s_locations,
 			            owner=""))
 		else:
 			db = self.application.database
 			tool = db.tools.find_one({'url_id':path})
+			locations = db.locations.find()
+			s_locations = ""
+			for l in locations:
+				s_locations+="<option>{0}</option>\n".format(l["name"])
 			self.write(template_object_edit.format(
 			           description_en=tool.get("description_en",""),
 			           description_jp=tool.get("description_jp",""),
@@ -128,6 +144,7 @@ class EditObjectHandler(BaseHandler):
 			           owner=tool["owner"],
 			           img_url=str(tool["picture_id"]),
 			           object_id=path,
+						locationlist=s_locations,
 			           secure_cookie=self.xsrf_form_html()))
 	def put(self,path):
 		return
@@ -139,11 +156,16 @@ class QRHandler(BaseHandler):
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
+			locations = db.locations.find()
+			s_locations = ""
+			for l in locations:
+				s_locations+="<option>{0}</option>\n".format(l["name"])
 			self.write(template_object_edit.format(
 						secure_cookie=self.xsrf_form_html(), 
 						object_id=path,
 						description_jp="",
 						description_en="",
+						locationlist=s_locations,
 						owner=""))
 		else:
 			db = self.application.database
@@ -240,7 +262,13 @@ class NewObjHandler(BaseHandler):
 		'thumbnail_id': thbid,
 		'location': self.request.arguments.get("location", [""])[0]}
 		db.tools.insert(newtool)
-
+		
+		loc = self.request.arguments.get("location", [""])[0]
+		if(loc=="Other"):
+			loc = self.request.arguments.get("newlocationname", [""])[0]
+			if db.locations.find({"name":loc}).count()==0:
+				db.locations.insert({"name":loc})
+				
 		self.write("<img src='/p/{0}'>".format(str(imgid)))
 
 class UploadPicHandler(BaseHandler):
@@ -295,10 +323,26 @@ class GenerateQRHandler(BaseHandler):
 		except:
 			self.write("Incorect ID")
 			return		
-		q=QR(u""+path)
+		q=QR(u""+options.home_url+"/o/"+path)
 		q.encode()
 		self.set_header("Content-Type", "image/gif")
 		self.write(open(q.filename).read())
+
+class Generate44QRHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		db = self.application.database
+		self.write("<table>\n  <tr>\n")
+		for i in range(44):
+			objid = random.randint(0,1e15)
+			while(db.tools.find({"url_id":str(objid)}).count()!=0):
+				objid = random.randint(0,1e15)
+			self.write("    <td><img src='"+options.home_url+"/g/"+str(objid)+"'></td>")
+			if i%11 == 10:
+				self.write("  </tr>\n  <tr>\n")
+		self.write("  </tr>\n</table>")
+
+		
 
 class LoginHandler(BaseHandler):
 	def get(self):
@@ -341,6 +385,7 @@ class Application(tornado.web.Application):
             (r"/auth/(.*)", AuthHandler),
             (r"/list", ListHandler),
             (r"/g/(.*)", GenerateQRHandler),
+            (r"/g44", Generate44QRHandler),
             (r"/edit/(.*)", EditObjectHandler),
             (r"/login", LoginHandler),
             (r"/newobject", NewObjHandler)
@@ -362,11 +407,12 @@ class Application(tornado.web.Application):
 
 
 def main():
-    tornado.options.parse_command_line()
-    app = Application()
-    http_server = tornado.httpserver.HTTPServer(app)
-    http_server.listen(options.port)
-    tornado.ioloop.IOLoop.instance().start()
+	random.seed(None)
+	tornado.options.parse_command_line()
+	app = Application()
+	http_server = tornado.httpserver.HTTPServer(app)
+	http_server.listen(options.port)
+	tornado.ioloop.IOLoop.instance().start()
 
  
 if __name__ == "__main__":
