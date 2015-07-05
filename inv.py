@@ -73,6 +73,19 @@ def header(handler):
 """<link href="/static/style.css" rel="stylesheet" class="text/css">
 <div class="header"><a href="/">Back to list</a></div>""")
 
+def generate_locations_list(db):
+	locations = db.locations.find()
+	s_locations = ""
+	first = True
+	for l in locations:
+		if first:
+			s_locations+="<option>{0}</option selected='selected'>\n".format(l["name"])
+			first=False
+		else:
+			s_locations+="<option>{0}</option>\n".format(l["name"])
+	return s_locations
+
+
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
@@ -121,24 +134,16 @@ class EditObjectHandler(BaseHandler):
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
-			locations = db.locations.find()
-			s_locations = ""
-			for l in locations:
-				s_locations+="<option>{0}</option>\n".format(l["name"])
 			self.write(template_object_edit.format(
 			            secure_cookie=self.xsrf_form_html(), 
 			            object_id=path,
 			            description_jp="",
 			            description_en="",
-						locationlist=s_locations,
+						locationlist=generate_locations_list(db),
 			            owner=""))
 		else:
 			db = self.application.database
 			tool = db.tools.find_one({'url_id':path})
-			locations = db.locations.find()
-			s_locations = ""
-			for l in locations:
-				s_locations+="<option>{0}</option>\n".format(l["name"])
 			self.write(template_object_edit.format(
 			           description_en=tool.get("description_en",""),
 			           description_jp=tool.get("description_jp",""),
@@ -146,7 +151,7 @@ class EditObjectHandler(BaseHandler):
 			           owner=tool["owner"],
 			           img_url=str(tool["picture_id"]),
 			           object_id=path,
-						locationlist=s_locations,
+						locationlist=generate_locations_list(db),
 			           secure_cookie=self.xsrf_form_html()))
 	def put(self,path):
 		return
@@ -158,16 +163,12 @@ class QRHandler(BaseHandler):
 		db = self.application.database
 		results = db.tools.find({'url_id':path})
 		if results.count()==0:
-			locations = db.locations.find()
-			s_locations = ""
-			for l in locations:
-				s_locations+="<option>{0}</option>\n".format(l["name"])
 			self.write(template_object_edit.format(
 						secure_cookie=self.xsrf_form_html(), 
 						object_id=path,
 						description_jp="",
 						description_en="",
-						locationlist=s_locations,
+						locationlist=generate_locations_list(db),
 						owner=""))
 		else:
 			db = self.application.database
@@ -203,6 +204,7 @@ class ObjectStatusHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
 		header(self)
+		db = self.application.database
 		act = self.request.arguments.get("action",[""])[0]
 		if act=="found":
 			msg ="I found this object at :"
@@ -215,27 +217,38 @@ class ObjectStatusHandler(BaseHandler):
 		<form action="/os" method="POST">
 			<input type="hidden" name="object_id" value="{object_id}"/>
 			<input type="hidden" name="action" value="{action}"/>
-			<select name="location">
-				<option>Hackefarm</option>
-				<option>Maison Bleue</option>
-				<option>SDF café</option>
-				<option>Other</option>
-			</select>
+		<select name="location" onclick="
+					if(value=='Other'){{
+						document.getElementById('newlocation').style.visibility='visible';
+					}}
+					else {{
+						document.getElementById('newlocation').style.visibility='hidden';
+					}}">
+			{locationlist}
+			<option>Other</option>
+		</select>
+		<div id="newlocation" style="visibility:hidden">Please enter the name of the new location: <input name="newlocationname"></div>
 			<input type="submit" value="Validate"/>
 			{secure}
 		</form>""".format(object_id = self.request.arguments.get("object_id",[""])[0],
 		                  action = self.request.arguments.get("action",[""])[0],
 		                  msg = msg,
-		                  secure=self.xsrf_form_html()))
+		                  secure=self.xsrf_form_html(),
+		                  locationlist=generate_locations_list(db)))
 	@tornado.web.authenticated
 	def post(self):
 		header(self)
 		self.write(self.request.arguments.get("location", [""])[0])
 		db = self.application.database
+		loc = self.request.arguments.get("location", [""])[0]
+		if(loc=="Other"):
+			loc = self.request.arguments.get("newlocationname", [""])[0]
+			if db.locations.find({"name":loc}).count()==0:
+				db.locations.insert({"name":loc})
 		db.actions.insert({
 			"action":self.request.arguments.get("action",[""])[0],
 			"user":self.get_current_user(),
-			"location":self.request.arguments.get("location",[""])[0],
+			"location":loc,
 			"timestamp":datetime.now(),
 			"object_id":self.request.arguments.get("object_id",[""])[0]})
 		db.tools.update({"url_id":self.request.arguments.get("object_id",[""])[0]},
@@ -255,6 +268,13 @@ class NewObjHandler(BaseHandler):
 		output = StringIO.StringIO()
 		thb.save(output, format="JPEG")
 		thbid = fs.put(output.getvalue())
+
+		loc = self.request.arguments.get("location", [""])[0]
+		if(loc=="Other"):
+			loc = self.request.arguments.get("newlocationname", [""])[0]
+			if db.locations.find({"name":loc}).count()==0:
+				db.locations.insert({"name":loc})
+
 		newtool = {
 		'owner': self.request.arguments.get("owner",[""])[0],
 		'url_id': self.request.arguments.get("url_id")[0],
@@ -262,14 +282,9 @@ class NewObjHandler(BaseHandler):
 		'description_en': self.request.arguments.get("description_en", [""])[0],
 		'picture_id': imgid,
 		'thumbnail_id': thbid,
-		'location': self.request.arguments.get("location", [""])[0]}
+		'location': loc}
 		db.tools.insert(newtool)
 		
-		loc = self.request.arguments.get("location", [""])[0]
-		if(loc=="Other"):
-			loc = self.request.arguments.get("newlocationname", [""])[0]
-			if db.locations.find({"name":loc}).count()==0:
-				db.locations.insert({"name":loc})
 				
 		self.write("<img src='/p/{0}'>".format(str(imgid)))
 
