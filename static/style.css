@@ -26,6 +26,14 @@ body {
 	padding: 3px;
 }
 
+.header{
+	border: 1px solid black;
+	padding: 10px;
+	background-color: #7799cc;
+	color: white;
+	font-weight: bold;
+}
+
 a{
 	text-decoration: none;
 }

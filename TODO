@@ -1,4 +1,5 @@
-- navigation bar (go back to list, admin, disconnect, EN/JP)
+- add location logic to "I found this object" "I am borrowing this object"
+- navigation bar ( admin, disconnect, EN/JP)
 - Admin page
 - Bigger buttons for phones
 - New location: GPS edition

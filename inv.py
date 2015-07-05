@@ -69,7 +69,9 @@ template_object_edit = u"""
 <div onmousedown="document.getElementById('newobjform').submit()" class="main_button">Create new tool</div>"""
 
 def header(handler):
-		handler.write("""<link href="/static/style.css" rel="stylesheet" class="text/css">""")
+		handler.write(
+"""<link href="/static/style.css" rel="stylesheet" class="text/css">
+<div class="header"><a href="/">Back to list</a></div>""")
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -335,14 +337,14 @@ class Generate44QRHandler(BaseHandler):
 		self.write("<table>\n  <tr>\n")
 		for i in range(44):
 			objid = random.randint(0,1e15)
-			while(db.tools.find({"url_id":str(objid)}).count()!=0):
+			while(db.tools.find({"url_id":str(objid)}).count()!=0 or
+			      db.generated_id.find({"url_id":str(objid)}).count()!=0):
 				objid = random.randint(0,1e15)
 			self.write("    <td><img src='"+options.home_url+"/g/"+str(objid)+"'></td>")
+			db.generated_id.insert({"url_id":objid})
 			if i%11 == 10:
 				self.write("  </tr>\n  <tr>\n")
 		self.write("  </tr>\n</table>")
-
-		
 
 class LoginHandler(BaseHandler):
 	def get(self):
