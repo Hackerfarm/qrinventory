@@ -85,6 +85,20 @@ def generate_locations_list(db):
 			s_locations+="<option>{0}</option>\n".format(l["name"])
 	return s_locations
 
+def generate_actions_list(db, objid):
+	actions = db.actions.find({"object_id":objid})
+	s_acts = ""
+	acts = list()
+	for a in actions:
+		acts.append(a)
+	acts.sort(key=(lambda x:x["timestamp"]))
+	for a in acts:
+		s_acts+=u"<div>At {time}, {user} did {action} to {location}</div>\n".format(user = a["user"],
+		                                                                      time = a["timestamp"],
+		                                                                      action = a["action"],
+		                                                                      location = a["location"])
+	return s_acts
+
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -193,12 +207,16 @@ class QRHandler(BaseHandler):
 			<div class="main_button">
 				<a href="/edit/{object_id}">Edit this object</a>
 			</div>
+			<div class="actions_list"><b>Last actions</b>
+			{actionslist}
+			</div>
 			""".format(description_en=tool.get("description_en",""),
 			           description_jp=tool.get("description_jp",""),
 			           location=tool.get("location",""),
 			           owner=tool["owner"],
 			           img_url=str(tool["picture_id"]),
-			           object_id=path))
+			           object_id=path,
+			           actionslist=generate_actions_list(db, path)))
 
 class ObjectStatusHandler(BaseHandler):
 	@tornado.web.authenticated
