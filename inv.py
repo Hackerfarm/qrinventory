@@ -357,8 +357,11 @@ class GenerateQRHandler(BaseHandler):
 				return
 		except:
 			self.write("Incorect ID")
-			return		
-		q=QR(u""+options.home_url+"/o/"+path)
+			return
+		home_url = options.home_url
+		if home_url.startswith("http://"):
+			home_url = home_url[7:]
+		q=QR(u""+home_url+"/o/"+path)
 		q.encode()
 		self.set_header("Content-Type", "image/gif")
 		self.write(open(q.filename).read())
@@ -376,6 +379,22 @@ class Generate44QRHandler(BaseHandler):
 			self.write("    <td><img src='"+options.home_url+"/g/"+str(objid)+"'></td>")
 			db.generated_id.insert({"url_id":objid})
 			if i%11 == 10:
+				self.write("  </tr>\n  <tr>\n")
+		self.write("  </tr>\n</table>")
+
+class Generate65QRHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		db = self.application.database
+		self.write("<table>\n  <tr>\n")
+		for i in range(65):
+			objid = random.randint(0,1e15)
+			while(db.tools.find({"url_id":str(objid)}).count()!=0 or
+			      db.generated_id.find({"url_id":str(objid)}).count()!=0):
+				objid = random.randint(0,1e15)
+			self.write("    <td><img src='"+options.home_url+"/g/"+str(objid)+"'></td>")
+			db.generated_id.insert({"url_id":objid})
+			if i%13 == 12:
 				self.write("  </tr>\n  <tr>\n")
 		self.write("  </tr>\n</table>")
 
@@ -421,6 +440,7 @@ class Application(tornado.web.Application):
             (r"/list", ListHandler),
             (r"/g/(.*)", GenerateQRHandler),
             (r"/g44", Generate44QRHandler),
+            (r"/g65", Generate65QRHandler),
             (r"/edit/(.*)", EditObjectHandler),
             (r"/login", LoginHandler),
             (r"/newobject", NewObjHandler)
