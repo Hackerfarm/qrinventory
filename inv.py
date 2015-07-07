@@ -385,18 +385,24 @@ class Generate44QRHandler(BaseHandler):
 class Generate65QRHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
+		self.set_header("Content-Type", "image/svg+xml")
 		db = self.application.database
-		self.write("<table>\n  <tr>\n")
-		for i in range(65):
+		#self.write("<table>\n  <tr>\n")
+		urls=[]
+		
+		for i in range(66):
 			objid = random.randint(0,1e15)
 			while(db.tools.find({"url_id":str(objid)}).count()!=0 or
 			      db.generated_id.find({"url_id":str(objid)}).count()!=0):
 				objid = random.randint(0,1e15)
-			self.write("    <td><img src='"+options.home_url+"/g/"+str(objid)+"'></td>")
+			#self.write("<img src='"+options.home_url+"/g/"+str(objid)+"'>")
 			db.generated_id.insert({"url_id":objid})
-			if i%13 == 12:
-				self.write("  </tr>\n  <tr>\n")
-		self.write("  </tr>\n</table>")
+			urls.append(options.home_url+"/g/"+str(objid))
+			#if i%13 == 12:
+			#	self.write("<br>\n")
+		s = open("static/labels65.svg").read()
+		print len(urls)
+		self.write(s.format(*urls))
 
 class LoginHandler(BaseHandler):
 	def get(self):
