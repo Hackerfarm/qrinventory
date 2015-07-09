@@ -1,4 +1,4 @@
-s=open("labels65.svg").read()
+s=open("labels120.svg").read()
 
 f=True
 ind = 0
