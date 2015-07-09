@@ -469,6 +469,7 @@ class Application(tornado.web.Application):
             (r"/g/(.*)", GenerateQRHandler),
             (r"/g44", Generate44QRHandler),
             (r"/g65", Generate65QRHandler),
+            (r"/g120", Generate120QRHandler),
             (r"/edit/(.*)", EditObjectHandler),
             (r"/login", LoginHandler),
             (r"/newobject", NewObjHandler)
