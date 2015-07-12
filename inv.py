@@ -366,6 +366,36 @@ class GenerateQRHandler(BaseHandler):
 		self.set_header("Content-Type", "image/gif")
 		self.write(open(q.filename).read())
 
+class GenerateAuthQRHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		self.get("")
+		
+	@tornado.web.authenticated
+	def get(self, path):
+		home_url = options.home_url
+		if home_url.startswith("http://"):
+			home_url = home_url[7:]
+		q=QR(u""+home_url+"/auth/"+path)
+		q.encode()
+		self.set_header("Content-Type", "image/gif")
+		self.write(open(q.filename).read())
+
+class AdminHandler(BaseHandler):
+	@tornado.web.authenticated
+	def get(self):
+		if self.get_current_user()!="Yves":
+			return
+		db = self.application.database
+		for user in db.users.find():
+			self.write("""
+<div>
+	<span>{username}</span>
+	<span><a href='/auth/{url}'>auth link</a></span>
+	<span><a href='/qrauth/{url}'>auth QR</a></span>
+</div>""".format(username=user["username"], url=user["url"]))
+
+
 class Generate44QRHandler(BaseHandler):
 	@tornado.web.authenticated
 	def get(self):
@@ -465,6 +495,8 @@ class Application(tornado.web.Application):
             (r"/p/(.*)", PictureHandler),
             (r"/os", ObjectStatusHandler),
             (r"/auth/(.*)", AuthHandler),
+            (r"/qrauth/(.*)", GenerateAuthQRHandler),            
+            (r"/admini", AdminHandler),                    
             (r"/list", ListHandler),
             (r"/g/(.*)", GenerateQRHandler),
             (r"/g44", Generate44QRHandler),
