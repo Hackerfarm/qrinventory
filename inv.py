@@ -33,15 +33,15 @@ template_object_edit = u"""
 <input type="hidden" value="{object_id}" name="url_id"/>
 <div>
 	<span>Description (Japanese)</span>
-	<span><input class="text" name="description_jp" value={description_jp}></input></span>
+	<span><input class="text" name="description_jp" value="{description_jp}"></input></span>
 </div>
 <div>
 	<span>Description (English)</span>
-	<span><input type="text" name="description_en" value={description_en}></input></span>
+	<span><input type="text" name="description_en" value="{description_en}"></input></span>
 </div>
 <div>
 	<span>Owner</span>
-	<span><input type="text" name="owner" value={owner}></input></span>
+	<span><input type="text" name="owner" value="{owner}"></input></span>
 </div>
 <div>
 	<span>Take a picture of the tool:</span>
