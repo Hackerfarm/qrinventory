@@ -50,7 +50,7 @@ template_object_edit = u"""
 <div>
 	<span>Current location of the tool</span>
 	<span>
-		<select name="location" onclick="
+		<select name="location" onchange="
 					if(value=='Other'){{
 						document.getElementById('newlocation').style.visibility='visible';
 					}}
@@ -235,7 +235,7 @@ class ObjectStatusHandler(BaseHandler):
 		<form action="/os" method="POST">
 			<input type="hidden" name="object_id" value="{object_id}"/>
 			<input type="hidden" name="action" value="{action}"/>
-		<select name="location" onclick="
+		<select name="location" onchange="
 					if(value=='Other'){{
 						document.getElementById('newlocation').style.visibility='visible';
 					}}
